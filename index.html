@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#294b3c" />
+  <meta name="description" content="Explore a new fit with CraftNDetail, a tailoring and clothing studio concept in Bakersfield, California." />
+  <title>CraftNDetail — Your next perfect fit</title>
+</head>
+<body>
+  <div class="demo-banner">A little imagination. A better fit. <span>Interactive class prototype · Sample information only</span></div>
+  <header class="header wrap">
+    <a class="brand" href="#" aria-label="CraftNDetail home"><span class="brand-icon">✂</span><span>Craft<span class="brand-n">N</span>Detail<small>TAILORING & CLOTHING STUDIO</small></span></a>
+    <nav aria-label="Main navigation"><button class="nav-link active" data-page="design">Design studio</button><button class="nav-link" data-page="requests">My requests <span id="request-count">0</span></button></nav>
+    <button class="profile-trigger" id="open-profile"><span class="avatar">JL</span><span>Jamie’s profile <span aria-hidden="true">⌄</span></span></button>
+  </header>
+  <main class="wrap">
+    <section id="design-page">
+      <div class="intro"><div><p class="eyebrow">MADE FOR YOU · BAKERSFIELD, CA</p><h1>Same favorite piece.<br><em>A whole new possibility.</em></h1><p>See your alteration idea come to life, before the first stitch.</p></div><div class="intro-note"><span>✧</span><p>Your style. Our craft.<br><small>Thoughtful alterations, made personal.</small></p></div></div>
+      <ol class="steps" aria-label="Design process"><li class="current"><span>01</span> Your garment</li><li><span>02</span> Explore the look</li><li><span>03</span> Plan your fitting</li></ol>
+      <div class="studio-grid">
+        <aside class="panel settings">
+          <div class="section-top"><p class="eyebrow">THE DETAILS</p><span class="pill">SAMPLE PROJECT</span></div>
+          <h2>Let’s make it yours.</h2><p class="muted">A fresh length for a favorite skirt.</p>
+          <div class="garment-card"><div class="garment-icon">♧</div><div><strong>Terracotta midi skirt</strong><small>Sample garment · Prepared AI imagery</small></div><span class="check">✓</span></div>
+          <label for="service">What would you like to change?</label><select id="service"><option>Shorten skirt</option></select>
+          <label for="length">Your new length</label><div class="choice-group" id="length"><button data-length="original" aria-pressed="false">Keep original</button><button class="selected" data-length="short" aria-pressed="true">Knee length</button></div>
+          <p class="field-note">One prepared alteration example. More lengths and services can be added later.</p>
+          <label for="notes">Tell us what you have in mind <span>(optional)</span></label><textarea id="notes" rows="3" maxlength="500" placeholder="A shorter everyday skirt, keeping the original shape…">I’d like this skirt shortened to knee length, keeping its original shape.</textarea><div class="field-note">Your notes travel with your request; they do not regenerate this preview.</div>
+          <button class="measurement-link" id="measurements-link"><span>⌁</span><span>Measurements & contact<small>Review Jamie’s sample profile</small></span><span>↗</span></button>
+          <button class="primary" id="request-fitting">Review fitting request <span>↗</span></button><p class="no-payment">No payment or booking required to explore.</p>
+        </aside>
+        <section class="preview-panel panel" aria-labelledby="preview-title">
+          <div class="preview-heading"><div><p class="eyebrow">A LITTLE BEFORE & AFTER</p><h2 id="preview-title">Picture the possibilities.</h2></div><span class="ai-badge">✧ Prepared AI concept</span></div>
+          <div class="view-toolbar"><div class="view-tabs" role="group" aria-label="Preview view"><button class="selected" data-view="compare" aria-pressed="true">Side by side</button><button data-view="after" aria-pressed="false">Proposed look</button></div><span class="image-count">01 / 01</span></div>
+          <div class="comparison" id="comparison"><figure class="photo before"><div class="photo-label">BEFORE <span>Original length</span></div><img src="/images/skirt-comparison.png" alt="AI sample: terracotta midi skirt on a neutral dressmaker mannequin" /></figure><figure class="photo after"><div class="photo-label">AFTER <span id="after-label">Knee length</span></div><img src="/images/skirt-comparison.png" alt="AI concept: the same terracotta skirt shortened to knee length on a neutral dressmaker mannequin" /><span class="photo-caption">A small change. A new favorite.</span></figure></div>
+          <div class="preview-footer"><span class="spark">✧</span><p><strong>A vision to start the conversation.</strong><br>Design concept only. Final fit, fabric details, price, and construction are confirmed with the studio during a fitting.</p></div>
+        </section>
+      </div>
+      <section class="benefits" aria-label="How it works"><div><span>01 — ENVISION</span><h3>Start with a possibility.</h3><p>Explore a prepared alteration concept.</p></div><div><span>02 — MAKE IT PERSONAL</span><h3>Your details matter.</h3><p>Add your preferences and measurements.</p></div><div><span>03 — MEET YOUR MAKER</span><h3>We’ll find the right fit.</h3><p>Bring your idea to a fitting with the studio.</p></div></section>
+      <div class="future-note"><span>ON THE DRAWING BOARD</span><p>Your photo. Your instructions. A new AI concept.<br><small>Live generation is a future option; this demonstration uses a prepared example.</small></p></div>
+    </section>
+    <section id="requests-page" hidden><div class="intro"><div><p class="eyebrow">YOUR STUDIO NOTEBOOK</p><h1>A new chapter<br><em>for your favorite clothes.</em></h1><p>Demo requests are saved in this browser only. Nothing is sent to the studio.</p></div><button class="secondary" data-page="design">+ Explore an alteration</button></div><div id="requests-list"></div><button id="clear-requests" class="text-button">Clear saved demo requests</button></section>
+  </main>
+  <footer class="wrap footer"><span class="footer-brand">CraftNDetail</span><span>Crafted with care in Bakersfield, California.</span><span>Class concept · No live bookings</span></footer>
+  <dialog id="profile-dialog"><form id="profile-form"><button type="button" class="close" aria-label="Close profile" data-close>×</button><p class="eyebrow">SAMPLE CUSTOMER PROFILE</p><h2>A few personal details.</h2><p class="muted">Fictional details for your presentation. Stored only in this browser; please don’t enter real customer information.</p><label for="customer-name">Customer name</label><input id="customer-name" name="name" required maxlength="80" /><label for="customer-email">Email</label><input id="customer-email" name="email" type="email" required maxlength="120" /><div class="form-row"><div><label for="waist">Waist (inches)</label><input id="waist" name="waist" type="number" min="10" max="100" step="0.1" /></div><div><label for="hips">Hips (inches)</label><input id="hips" name="hips" type="number" min="10" max="120" step="0.1" /></div></div><label for="measured-by">Measurements provided by</label><select id="measured-by" name="source"><option>Customer — unverified</option><option>Studio — sample fitting</option></select><p class="field-note">Optional measurements are reference notes, not a prediction of fit. A measurement-based mannequin is planned for a later version.</p><button class="primary">Save sample profile</button></form></dialog>
+  <dialog id="request-dialog"><button class="close" aria-label="Close fitting request" data-close>×</button><div id="request-content"></div></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

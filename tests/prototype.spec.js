@@ -1,0 +1,76 @@
+import { test, expect } from '@playwright/test';
+
+test('alteration preview, profile and demo fitting request persist', async ({ page }) => {
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.getByRole('heading', {name:'Picture the possibilities.'})).toBeVisible();
+  await expect(page.locator('.before img')).toHaveJSProperty('naturalWidth', 1536);
+  await page.getByRole('button', {name:'Keep original',exact:true}).click();
+  await expect(page.locator('.after')).toHaveClass(/original/);
+  await page.getByRole('button', {name:'Knee length',exact:true}).click();
+  await page.getByRole('button', {name:'Proposed look',exact:true}).click();
+  await expect(page.locator('.before')).toBeHidden();
+  await page.getByRole('button', {name:'Side by side',exact:true}).click();
+  await page.locator('#open-profile').click();
+  await page.getByLabel('Customer name').fill('Alex Demo');
+  await page.getByRole('button', {name:'Save sample profile'}).click();
+  await page.locator('#notes').fill('Please preserve the hem details.');
+  await page.getByRole('button', {name:'Review fitting request'}).click();
+  await expect(page.locator('#request-content')).toContainText('Alex Demo');
+  await expect(page.locator('#request-content')).toContainText('Please preserve the hem details.');
+  await page.getByRole('button', {name:'Save demo request'}).click();
+  await page.getByRole('button', {name:'View my requests'}).click();
+  await expect(page.locator('#requests-list')).toContainText('Alex Demo');
+  await page.reload();
+  await page.locator('[data-page="requests"]').first().click();
+  await expect(page.locator('#requests-list')).toContainText('Please preserve the hem details.');
+  await page.getByRole('button', {name:'Remove demo request'}).click();
+  await expect(page.locator('#requests-list')).toContainText('Every great fit starts with an idea.');
+  expect(errors).toEqual([]);
+});
+
+test('wardrobe upload, activity filters, edit, mannequin outfit and reload', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', {name:'My wardrobe',exact:true}).click();
+  await expect(page.locator('.wardrobe-item')).toHaveCount(4);
+  await page.getByRole('button', {name:'Work',exact:true}).click();
+  await expect(page.locator('.wardrobe-item')).toHaveCount(1);
+  await page.getByRole('button', {name:'All',exact:true}).click();
+  await page.getByRole('button', {name:'Add clothing',exact:false}).click();
+  await page.locator('#garment-files').setInputFiles('public/images/skirt-comparison.png');
+  await page.getByLabel('Item name (one photo) / collection name (multiple)').fill('My uploaded skirt');
+  await page.getByLabel('Type',{exact:true}).selectOption('bottom');
+  await page.getByLabel('Activity',{exact:true}).selectOption('Work');
+  await page.getByRole('button', {name:'Add to my wardrobe'}).click();
+  const card = page.locator('.wardrobe-item').filter({has:page.getByRole('heading',{name:'My uploaded skirt',exact:true})});
+  await expect(card).toBeVisible();
+  await card.getByRole('button', {name:'Add to outfit'}).click();
+  await page.locator('.wardrobe-item').filter({hasText:'Cream everyday tee'}).getByRole('button',{name:'Add to outfit'}).click();
+  await expect(page.locator('.outfit-piece')).toHaveCount(2);
+  await page.getByLabel('Outfit name',{exact:true}).fill('Studio day');
+  await page.getByRole('button', {name:'Save outfit',exact:false}).click();
+  await expect(page.locator('#saved-outfits')).toContainText('Studio day');
+  await page.reload();
+  await page.getByRole('button', {name:'My wardrobe',exact:true}).click();
+  await expect(page.locator('.wardrobe-item')).toHaveCount(5);
+  await page.getByRole('button', {name:'Open outfit'}).click();
+  await expect(page.locator('.outfit-piece')).toHaveCount(2);
+  await card.getByRole('button', {name:'Edit details'}).click();
+  await page.getByLabel('Item name',{exact:true}).fill('Renamed skirt');
+  await page.getByRole('button',{name:'Save item',exact:true}).click();
+  await expect(page.locator('#outfit-slots')).toContainText('Renamed skirt');
+  await page.getByRole('button', {name:'Remove Renamed skirt',exact:true}).click();
+  await expect(page.locator('.wardrobe-item')).toHaveCount(4);
+  await expect(page.locator('.outfit-piece')).toHaveCount(1);
+});
+
+test('phone layout has no horizontal overflow and navigation works', async ({ page }) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/');
+  await expect(page.locator('.preview-panel')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({path:'test-results/mobile.png',fullPage:true});
+  await page.getByRole('button',{name:'My wardrobe',exact:true}).click();
+  await expect(page.locator('.wardrobe-item')).toHaveCount(4);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
