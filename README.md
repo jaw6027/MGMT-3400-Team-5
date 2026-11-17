@@ -44,6 +44,16 @@ Open the development address printed by Vite. `npm run build` creates a static `
 - Storage: measurements and requests use localStorage; garment images and outfits use IndexedDB. Data is specific to this browser/site and does not synchronize between customers, devices or teammates. Use fictional data only. Clearing browser site data deletes everything. This is customer wardrobe inventory, not a business stock or production management system.
 - Future work: live AI generation through a server-side service, photo consent and retention controls, authenticated customer accounts/database, additional services, staff intake for phone/email/in-person requests, real booking and pricing, optional measurement-based mannequins. Never put AI service credentials in browser code.
 
+## Service Quote Calculator (Priority 3)
+
+Open **Service quotes** for staff pricing examples. Select a suggested alteration/repair or enter a custom service. All initial figures are hypothetical. Materials, labor hours/rate, overhead, additional fitting minutes, and target profit margin update estimates immediately. Fitting minutes use the labor rate and are additional to labor hours.
+
+Total cost = materials + overhead + (labor hours + fitting minutes / 60) × hourly rate. Suggested customer price = cost / (1 − target margin), rounded up to cents. Profit = price − cost; margin = profit / price. A zero price has no defined margin. This uses margin on revenue, not markup on cost. Tax and expenses not entered are excluded.
+
+The separate **Fixed quoted price** stays unchanged as costs change. Compare profit before/after additional fitting and its dollar reduction. **Use suggested price as fixed quote** explicitly copies the current suggestion. For example, $5 materials + 1 hour at $25 + $10 overhead costs $40. A 30% target margin suggests $57.15. At a fixed $60 quote, adding 30 fitting minutes costs $12.50 and reduces profit from $20 to $7.50; 60 minutes creates a $5 loss.
+
+Save drafts, reopen/edit them, or delete them. Quote records use the separate `cnd-service-quotes` localStorage key and do not change customer, request or wardrobe records. Confirmation requires the reviewing tailor's name and approval checkbox. Editing quote inputs or reopening a record requires fresh approval. Saving an edited record as a draft replaces its previous confirmation. This is a local classroom approval record, not authenticated authorization or an immutable audit trail; no customer message, payment or booking is created. Browser data does not sync and is lost when site storage is cleared.
+
 ## Validation
 
 ```sh
@@ -51,7 +61,7 @@ npm run build
 npm test
 ```
 
-Browser tests use Playwright with `/usr/bin/chromium` in this cloud environment. Set `CHROMIUM_PATH` to a compatible local Chromium executable elsewhere. Tests cover preview choices, sample profile/request persistence, photo upload, wardrobe filters and editing, saved outfits and removal, and phone layout.
+Browser tests use Playwright with `/usr/bin/chromium` in this cloud environment. Set `CHROMIUM_PATH` to a compatible local Chromium executable elsewhere. Tests cover preview choices, sample profile/request persistence, photo upload, wardrobe filters and editing, saved outfits and removal, and phone layout. Quote tests additionally cover multiple pricing examples, fitting-time losses, zero costs/prices, invalid inputs, local draft persistence, approval requirements/reset, and navigation at phone, tablet and desktop widths.
 
 ## Team integration
 
