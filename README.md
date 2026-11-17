@@ -2,6 +2,21 @@
 
 A clickable class demonstration for a tailoring and clothing studio concept in Bakersfield, California. Built with plain JavaScript, CSS and Vite. No API keys or external services are required.
 
+## Open the clickable website
+
+The repository includes a prebuilt GitHub Pages site in `docs/`. A repository administrator can enable hosting once:
+
+1. In GitHub, open **Settings → Pages**.
+2. Under **Build and deployment**, choose **Deploy from a branch**.
+3. Select **main** and **/docs**, then click **Save**.
+4. Wait for GitHub to finish deployment. Open the site address GitHub displays on that page.
+
+The expected address is `https://jaw6027.github.io/MGMT-3400-Team-5/`, but it is not live until Pages has been enabled and deployment succeeds. GitHub may restrict Pages based on repository visibility, account plan, or organization settings; do not change repository visibility just to enable hosting.
+
+After UI changes, run `npm run build:pages` and commit the updated `docs/` alongside the source so Pages serves the latest version. `docs/` is generated output, not a separate application to edit. Relative asset paths support the repository URL.
+
+For a version that opens without hosting, run `npm run export:demo`. Download `exports/CraftNDetail-demo.html` and open it in Chrome, Edge, Firefox, or Safari. No installation or account is needed to view it. Browser storage for downloaded files is browser-specific and separate from the hosted website. Use fictional data. Regenerate this file after UI changes; the export is intentionally not committed.
+
 ## Run locally
 
 Use Node.js 22.12+ (tested with Node 24) and npm:
