@@ -1,4 +1,9 @@
 import './style.css';
+import teePhoto from './assets/tee.png';
+import trousersPhoto from './assets/trousers.png';
+import shirtPhoto from './assets/shirt.png';
+import leggingsPhoto from './assets/leggings.png';
+const samplePhotos = {'sample-top':teePhoto,'sample-bottom':trousersPhoto,'sample-work':shirtPhoto,'sample-athletic':leggingsPhoto};
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -71,7 +76,7 @@ $('#requests-list').addEventListener('click', event => { const button = event.ta
 $('#clear-requests').addEventListener('click', () => { if (save('cnd-requests', [])) { requests = []; renderRequests(); updateCount(); } });
 
 // Wardrobe data uses IndexedDB so photographs do not fill the small localStorage quota.
-const wardrobeHTML = `<section id="wardrobe-page" hidden><div class="intro"><div><p class="eyebrow">YOUR WARDROBE, REIMAGINED</p><h1>A little less “what to wear.”<br><em>A little more you.</em></h1><p>Collect your pieces. Plan an outfit. Make room for every part of your day.</p></div><button class="secondary" id="add-garment">+ Add clothing</button></div><p class="upload-note">Demo inventory stays in this browser. Add multiple photos at once, one garment per photo. Photos are shown as outfit tiles on a neutral mannequin; this is not AI virtual try-on or an accurate fit simulation.</p><div class="wardrobe-layout"><div><div class="wardrobe-tools" role="group" aria-label="Filter by activity">${['All','Lounge','Athletic','Work','Everyday'].map((s,i) => `<button class="filter-btn ${i===0?'selected':''}" data-filter="${s}" aria-pressed="${i===0}">${s}</button>`).join('')}</div><p class="wardrobe-count" id="wardrobe-count"></p><div class="wardrobe-grid" id="wardrobe-grid"></div><div id="saved-outfits"></div></div><aside class="panel outfit-panel"><p class="eyebrow">THE OUTFIT BOARD</p><h2>A look for your day.</h2><label for="outfit-activity">Plan for</label><select id="outfit-activity"><option>Everyday</option><option>Lounge</option><option>Athletic</option><option>Work</option></select><div class="mannequin-stage"><svg viewBox="0 0 250 350" role="img" aria-label="Neutral dressmaker mannequin outfit board"><defs><linearGradient id="cloth"><stop stop-color="#d7c9b3"/><stop offset=".5" stop-color="#f7efdf"/><stop offset="1" stop-color="#d9cbb4"/></linearGradient></defs><ellipse cx="125" cy="332" rx="53" ry="7" fill="#c9b9a0"/><path d="M125 40V327M91 327H159" stroke="#8e7353" stroke-width="5"/><path d="M108 42L108 57Q89 63 76 81L90 147L85 205Q125 225 165 205L160 147L174 81Q161 63 142 57L142 42Z" fill="url(#cloth)" stroke="#b6a28a"/><path d="M125 44V214M90 147Q125 155 160 147" stroke="#b6a28a" fill="none" stroke-dasharray="3 4"/><ellipse cx="125" cy="42" rx="17" ry="5" fill="#a98e6b"/></svg><div id="outfit-layers"></div></div><div id="outfit-slots"></div><label for="outfit-name">Outfit name</label><input id="outfit-name" maxlength="80" placeholder="Monday at the studio"/><button class="primary" id="save-outfit">Save outfit <span>+</span></button><p class="field-note">This board does not use your body measurements. Clothing photos retain their original background.</p></aside></div></section>`;
+const wardrobeHTML = `<section id="wardrobe-page" hidden><div class="intro"><div><p class="eyebrow">YOUR WARDROBE, REIMAGINED</p><h1>My wardrobe</h1><p>Pick your pieces. Put together a look for your day.</p></div><button class="secondary" id="add-garment">+ Add clothing</button></div><p class="upload-note">Drag a clothing photo onto the mannequin, or use “Add to outfit.” Your wardrobe and saved looks stay in this browser.</p><div class="wardrobe-layout"><div><div class="wardrobe-tools" role="group" aria-label="Filter by activity">${['All','Lounge','Athletic','Work','Everyday'].map((s,i) => `<button class="filter-btn ${i===0?'selected':''}" data-filter="${s}" aria-pressed="${i===0}">${s}</button>`).join('')}</div><p class="wardrobe-count" id="wardrobe-count"></p><div class="wardrobe-grid" id="wardrobe-grid"></div><div id="saved-outfits"></div></div><aside class="panel outfit-panel"><p class="eyebrow">THE OUTFIT BOARD</p><h2>Build an outfit</h2><p class="muted">Drop a piece onto the mannequin to try a combination.</p><div class="mannequin-stage" id="outfit-drop-zone" role="region" aria-label="Drop clothing here to build an outfit"><svg viewBox="0 0 250 350" role="img" aria-label="Neutral dressmaker mannequin outfit board"><defs><linearGradient id="cloth"><stop stop-color="#d7c9b3"/><stop offset=".5" stop-color="#f7efdf"/><stop offset="1" stop-color="#d9cbb4"/></linearGradient></defs><ellipse cx="125" cy="332" rx="53" ry="7" fill="#c9b9a0"/><path d="M125 40V327M91 327H159" stroke="#8e7353" stroke-width="5"/><path d="M108 42L108 57Q89 63 76 81L90 147L85 205Q125 225 165 205L160 147L174 81Q161 63 142 57L142 42Z" fill="url(#cloth)" stroke="#b6a28a"/><path d="M125 44V214M90 147Q125 155 160 147" stroke="#b6a28a" fill="none" stroke-dasharray="3 4"/><ellipse cx="125" cy="42" rx="17" ry="5" fill="#a98e6b"/></svg><div id="outfit-layers"></div><span class="drop-hint" aria-hidden="true">Drop clothing here</span></div><label for="outfit-activity">Plan for</label><select id="outfit-activity"><option>Everyday</option><option>Lounge</option><option>Athletic</option><option>Work</option></select><div id="outfit-slots"></div><label for="outfit-name">Outfit name</label><input id="outfit-name" maxlength="80" placeholder="Monday at the studio"/><button class="primary" id="save-outfit">Save outfit <span>+</span></button><button class="text-button" id="clear-outfit">Clear outfit board</button><p class="field-note">A simple outfit arrangement, not a fit simulation. Uploaded photos keep their backgrounds.</p></aside></div></section>`;
 $('main').insertAdjacentHTML('beforeend',wardrobeHTML);
 $('nav').insertAdjacentHTML('beforeend','<button class="nav-link" data-page="wardrobe">My wardrobe</button>');
 document.body.insertAdjacentHTML('beforeend',`<dialog id="garment-dialog"><form id="garment-form"><button type="button" class="close" data-close aria-label="Close clothing form">×</button><p class="eyebrow">BUILD YOUR CLOSET</p><h2>A place for every piece.</h2><p class="muted">Upload one or several clothing photos. Each photo becomes a separate inventory item you can rename.</p><label for="garment-files">Clothing photos</label><input id="garment-files" type="file" accept="image/jpeg,image/png,image/webp" multiple required/><p class="field-note">JPEG, PNG or WebP · Up to 12 photos per upload · 8 MB each. Images are resized for browser storage.</p><label for="garment-name">Item name (one photo) / collection name (multiple)</label><input id="garment-name" maxlength="80" placeholder="Cream work shirt"/><label for="garment-category">Type</label><select id="garment-category"><option value="top">Top</option><option value="bottom">Bottom</option><option value="shoes">Shoes</option></select><label for="garment-activity">Activity</label><select id="garment-activity"><option>Everyday</option><option>Lounge</option><option>Athletic</option><option>Work</option></select><button class="primary" id="upload-submit">Add to my wardrobe <span>+</span></button><p id="upload-error" class="field-note" role="alert"></p></form></dialog>`);
@@ -83,26 +88,28 @@ const databaseReady = new Promise((resolve,reject) => {
 });
 async function storeRead(store) { await databaseReady; return new Promise((resolve,reject) => { const req = db.transaction(store).objectStore(store).getAll(); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
 async function writeRecords(store, records, operation = 'put') { await databaseReady; return new Promise((resolve,reject) => { const tx = db.transaction(store,'readwrite'); records.forEach(record => tx.objectStore(store)[operation](record)); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error); }); }
-function sampleImage(kind,color) {
-  const shape = kind === 'top' ? '<path d="M65 45L92 30Q110 50 128 30L155 45L180 90L150 105L140 85V182H80V85L70 105L40 90Z"/>' : kind === 'bottom' ? '<path d="M78 35H142L154 190H118L110 100L102 190H66Z"/>' : '<path d="M45 115L85 110L110 138L166 145Q188 155 173 172H45Z"/>';
-  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220"><rect width="220" height="220" fill="#f3eadf"/><g fill="${color}" stroke="#a89078" stroke-width="2">${shape}</g></svg>`)}`;
-}
 async function initializeWardrobe() {
   try {
     items = await storeRead('items'); outfits = await storeRead('outfits');
     if (!items.length && !read('cnd-wardrobe-seeded',false)) {
-      items = [{id:'sample-top',name:'Cream everyday tee',category:'top',activity:'Everyday',image:sampleImage('top','#eee4d2')},{id:'sample-bottom',name:'Terracotta lounge trousers',category:'bottom',activity:'Lounge',image:sampleImage('bottom','#b66b49')},{id:'sample-work',name:'Studio work shirt',category:'top',activity:'Work',image:sampleImage('top','#85917f')},{id:'sample-athletic',name:'Athletic leggings',category:'bottom',activity:'Athletic',image:sampleImage('bottom','#56514f')}];
+      items = [{id:'sample-top',name:'Cream everyday tee',category:'top',activity:'Everyday',image:samplePhotos['sample-top']},{id:'sample-bottom',name:'Terracotta lounge trousers',category:'bottom',activity:'Lounge',image:samplePhotos['sample-bottom']},{id:'sample-work',name:'Studio work shirt',category:'top',activity:'Work',image:samplePhotos['sample-work']},{id:'sample-athletic',name:'Athletic leggings',category:'bottom',activity:'Athletic',image:samplePhotos['sample-athletic']}];
       await writeRecords('items',items); save('cnd-wardrobe-seeded',true);
+    }
+    // Refresh only built-in sample imagery; keep names, tags, uploads and saved looks.
+    const refreshed = items.filter(item => samplePhotos[item.id]).map(item => ({...item,image:samplePhotos[item.id]}));
+    if (refreshed.length) {
+      await writeRecords('items',refreshed);
+      items = items.map(item => refreshed.find(updated => updated.id === item.id) || item);
     }
     renderWardrobe();
   } catch { $('#wardrobe-grid').innerHTML = '<p class="upload-note">Wardrobe storage is unavailable in this browser. Allow site storage and reload to use this section.</p>'; $('#add-garment').disabled = true; }
 }
 function renderWardrobe() {
   const visible = items.filter(item => filter === 'All' || item.activity === filter);
-  $('#wardrobe-count').textContent = `${visible.length} shown · ${items.length} pieces in your wardrobe`;
-  $('#wardrobe-grid').innerHTML = visible.length ? visible.map(item => `<article class="panel wardrobe-item"><img src="${escape(item.image)}" alt="${escape(item.name)}"/><button class="remove-item" data-remove-item="${escape(item.id)}" aria-label="Remove ${escape(item.name)}">×</button><h3>${escape(item.name)}</h3><p>${escape(item.activity)} · ${escape(item.category)}</p><button class="secondary" data-wear="${escape(item.id)}">${slots[item.category]===item.id?'✓ On outfit board':'Add to outfit'}</button><button class="text-button" data-edit="${escape(item.id)}">Edit details</button></article>`).join('') : '<div class="empty-state"><h3>Room for something you love.</h3><p>Add a clothing photo or choose another activity.</p></div>';
+  $('#wardrobe-count').textContent = `${visible.length} shown · ${items.length} pieces in your wardrobe · AI sample photos included`;
+  $('#wardrobe-grid').innerHTML = visible.length ? visible.map(item => `<article class="panel wardrobe-item"><div class="garment-photo" draggable="true" data-drag-item="${escape(item.id)}" aria-label="Drag ${escape(item.name)} onto the mannequin"><img src="${escape(item.image)}" alt="${escape(item.name)}" draggable="false"/><span class="drag-label" aria-hidden="true">⠿ Drag to mannequin</span></div><button class="remove-item" data-remove-item="${escape(item.id)}" aria-label="Remove ${escape(item.name)}">×</button><h3>${escape(item.name)}</h3><p>${escape(item.activity)} · ${escape(item.category)}</p><button class="secondary" data-wear="${escape(item.id)}">${slots[item.category]===item.id?'✓ On outfit board':'Add to outfit'}</button><button class="text-button" data-edit="${escape(item.id)}">Edit details</button></article>`).join('') : '<div class="empty-state"><h3>Room for something you love.</h3><p>Add a clothing photo or choose another activity.</p></div>';
   renderOutfit();
-  $('#saved-outfits').innerHTML = `<h2>Saved looks</h2>${outfits.length ? outfits.map(o => `<article class="panel outfit-card"><h3>${escape(o.name)}</h3><p>${escape(o.activity)} · ${Object.values(o.slots).filter(Boolean).length} pieces</p><button class="secondary" data-load-outfit="${escape(o.id)}">Open outfit</button> <button class="text-button" data-remove-outfit="${escape(o.id)}">Remove</button></article>`).join('') : '<p class="upload-note">Your saved outfits will appear here.</p>'}`;
+  $('#saved-outfits').innerHTML = `<h2>Saved outfits</h2>${outfits.length ? outfits.map(o => `<article class="panel outfit-card"><h3>${escape(o.name)}</h3><p>${escape(o.activity)} · ${Object.values(o.slots).filter(Boolean).length} pieces</p><button class="secondary" data-load-outfit="${escape(o.id)}">Open outfit</button> <button class="text-button" data-remove-outfit="${escape(o.id)}">Remove</button></article>`).join('') : '<p class="upload-note">Your saved outfits will appear here.</p>'}`;
 }
 function renderOutfit() {
   $('#outfit-layers').innerHTML = Object.entries(slots).map(([category,id]) => { const item = items.find(i => i.id===id); return item ? `<img class="outfit-piece ${category}" src="${escape(item.image)}" alt="${escape(item.name)} on mannequin board"/>` : ''; }).join('');
@@ -131,7 +138,7 @@ $('#garment-form').addEventListener('submit', async event => {
 });
 $('#wardrobe-grid').addEventListener('click', async event => {
   const wear = event.target.closest('[data-wear]'), remove = event.target.closest('[data-remove-item]'), edit = event.target.closest('[data-edit]');
-  if (wear) { const item = items.find(i => i.id===wear.dataset.wear); slots[item.category] = item.id; renderWardrobe(); }
+  if (wear) wearItem(wear.dataset.wear);
   if (remove) { try { const id = remove.dataset.removeItem; await writeRecords('items',[id],'delete'); items = items.filter(i => i.id!==id); Object.keys(slots).forEach(key => { if (slots[key]===id) slots[key]=null; }); renderWardrobe(); } catch { toast('Could not remove this item.'); } }
   if (edit) openEdit(items.find(i => i.id === edit.dataset.edit));
 });
@@ -152,5 +159,51 @@ $('#saved-outfits').addEventListener('click', async event => {
   const load = event.target.closest('[data-load-outfit]'), remove = event.target.closest('[data-remove-outfit]');
   if (load) { const outfit = outfits.find(o=>o.id===load.dataset.loadOutfit); slots = Object.fromEntries(Object.entries(outfit.slots).map(([key,id])=>[key,items.some(i=>i.id===id)?id:null])); $('#outfit-name').value=outfit.name; $('#outfit-activity').value=outfit.activity; renderWardrobe(); toast('Saved outfit opened. Removed clothing is left out.'); }
   if (remove) { try { await writeRecords('outfits',[remove.dataset.removeOutfit],'delete'); outfits=outfits.filter(o=>o.id!==remove.dataset.removeOutfit); renderWardrobe(); } catch { toast('Could not remove outfit.'); } }
+});
+function wearItem(id) {
+  const item = items.find(piece => piece.id === id);
+  if (!item) return false;
+  slots[item.category] = item.id;
+  renderWardrobe();
+  toast(`${item.name} added to your outfit.`);
+  return true;
+}
+let draggedItem = null;
+const dropZone = $('#outfit-drop-zone');
+function endDrag() {
+  draggedItem = null;
+  dropZone.classList.remove('drag-over','drag-ready');
+  $$('.garment-photo.dragging').forEach(photo => photo.classList.remove('dragging'));
+}
+$('#wardrobe-grid').addEventListener('dragstart', event => {
+  const photo = event.target.closest('[data-drag-item]');
+  if (!photo || !event.dataTransfer) return;
+  draggedItem = photo.dataset.dragItem;
+  event.dataTransfer.setData('application/x-craftndetail-item',draggedItem);
+  event.dataTransfer.effectAllowed = 'copy';
+  photo.classList.add('dragging');
+  dropZone.classList.add('drag-ready');
+});
+$('#wardrobe-grid').addEventListener('dragend',endDrag);
+dropZone.addEventListener('dragover', event => {
+  if (!draggedItem) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'copy';
+  dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', event => {
+  if (!dropZone.contains(event.relatedTarget)) dropZone.classList.remove('drag-over');
+});
+dropZone.addEventListener('drop', event => {
+  event.preventDefault();
+  const id = event.dataTransfer?.getData('application/x-craftndetail-item');
+  // Only accept an item dragged from this wardrobe; external text/files cannot select it.
+  if (id && id === draggedItem) wearItem(id);
+  endDrag();
+});
+$('#clear-outfit').addEventListener('click', () => {
+  slots = {top:null,bottom:null,shoes:null};
+  renderWardrobe();
+  toast('Outfit board cleared. Your saved looks are unchanged.');
 });
 updateCount(); initializeWardrobe();

@@ -33,12 +33,12 @@ Open the development address printed by Vite. `npm run build` creates a static `
 1. In **Design studio**, compare the terracotta skirt before and after shortening on neutral dressmaker mannequins. Switch between original and knee length, and side-by-side and proposed look.
 2. Open **Jamie's profile** to edit fictional contact details, optional measurements in inches, and their source. These measurements do not reshape the mannequin.
 3. Add alteration notes, review a fitting request, and save it. **My requests** shows the saved request. Nothing is sent or booked; prices and timing require a fitting.
-4. Open **My wardrobe**. Four illustrated example pieces are included. Add several garment photos, select their type and activity, and edit items individually afterward.
-5. Filter by lounge, athletic, work, or everyday use. Add pieces to the mannequin outfit board, name an outfit, and save it. Reload to demonstrate persistence.
+4. Open **My wardrobe**. Four realistic AI-generated sample product photos are included. Add several garment photos, select their type and activity, and edit items individually afterward.
+5. Filter by lounge, athletic, work, or everyday use. Drag garment photos onto the mannequin outfit board, or use the accessible **Add to outfit** buttons. A piece automatically goes into its top, bottom, or shoes slot; adding another of the same type replaces it. Name and save a look, or clear the current board without deleting saved outfits. Reload to demonstrate persistence.
 
 ## What is real, simulated, and deferred
 
-- Working: browser navigation, original/proposed view selection, editable sample profile, saved demo requests, batch photo upload, wardrobe inventory edits/deletion, activity filtering, mannequin outfit arrangement, outfit saving/loading/deletion, responsive layout.
+- Working: browser navigation, original/proposed view selection, editable sample profile, saved demo requests, batch photo upload, wardrobe inventory edits/deletion, activity filtering, drag-and-drop mannequin outfit arrangement, outfit saving/loading/deletion, responsive layout.
 - Prepared AI sample: `public/images/skirt-comparison.png` is a generated before/after illustration inspired by the user's mannequin reference. Changing notes does not generate a new image. Original/short toggles select prepared imagery; no fabricated generation progress is displayed.
 - Wardrobe arrangement: photographs appear as simple tiles over a neutral mannequin. Background removal, realistic garment draping and body-measurement simulation are not implemented.
 - Storage: measurements and requests use localStorage; garment images and outfits use IndexedDB. Data is specific to this browser/site and does not synchronize between customers, devices or teammates. Use fictional data only. Clearing browser site data deletes everything. This is customer wardrobe inventory, not a business stock or production management system.
@@ -57,4 +57,4 @@ Browser tests use Playwright with `/usr/bin/chromium` in this cloud environment.
 
 No customer, appointment, economics or service-catalog module was present when this section was created. Before joining sections, agree on the service list, customer identifiers, measurement units/source/date and recheck process, fitting-request handoff, pricing ownership, and who owns shared navigation/storage. Keep payment and confirmed orders separate from consultation requests. All current prices/dates are intentionally unconfirmed.
 
-Prototype assets were generated with OpenAI image generation; sample clothing tiles are original SVG illustrations.
+Prototype imagery, including the four transparent sample garment product photos, was generated with OpenAI image generation. The lighter interface uses white cards, charcoal text, and muted teal accents. Existing built-in sample items receive the new imagery without changing their names, tags, or saved outfit references; uploaded clothing and deleted samples are preserved.

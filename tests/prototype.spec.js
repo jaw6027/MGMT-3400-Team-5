@@ -74,3 +74,57 @@ test('phone layout has no horizontal overflow and navigation works', async ({ pa
   await expect(page.locator('.wardrobe-item')).toHaveCount(4);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+test('drag clothing onto mannequin, replace a piece, save and clear a look', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', {name:'My wardrobe',exact:true}).click();
+  const tee = page.locator('[data-drag-item="sample-top"]');
+  const shirt = page.locator('[data-drag-item="sample-work"]');
+  const trousers = page.locator('[data-drag-item="sample-bottom"]');
+  const board = page.locator('#outfit-drop-zone');
+  await expect(tee.locator('img')).toHaveJSProperty('complete',true);
+  expect(await tee.locator('img').evaluate(img=>img.naturalWidth)).toBeGreaterThan(0);
+  // Put both source and destination in view before the mouse button is held.
+  await board.scrollIntoViewIfNeeded();
+  await tee.dragTo(board);
+  await expect(page.locator('#outfit-slots')).toContainText('Cream everyday tee');
+  await trousers.dragTo(board);
+  await expect(page.locator('.outfit-piece')).toHaveCount(2);
+  await shirt.dragTo(board);
+  await expect(page.locator('.outfit-piece')).toHaveCount(2);
+  await expect(page.locator('#outfit-slots')).toContainText('Studio work shirt');
+  await expect(page.locator('#outfit-slots')).not.toContainText('Cream everyday tee');
+  await expect(board).not.toHaveClass(/drag-over|drag-ready/);
+  await page.getByLabel('Outfit name',{exact:true}).fill('Dragged work outfit');
+  await page.getByRole('button', {name:'Save outfit',exact:false}).click();
+  await page.getByRole('button', {name:'Clear outfit board',exact:true}).click();
+  await expect(page.locator('.outfit-piece')).toHaveCount(0);
+  await page.reload();
+  await page.getByRole('button', {name:'My wardrobe',exact:true}).click();
+  await page.getByRole('button', {name:'Open outfit',exact:true}).click();
+  await expect(page.locator('.outfit-piece')).toHaveCount(2);
+  await expect(page.locator('#outfit-slots')).toContainText('Studio work shirt');
+});
+
+test('existing sample photos update without losing edited details or uploaded clothing', async ({page}) => {
+  await page.goto('/');
+  await page.getByRole('button',{name:'My wardrobe',exact:true}).click();
+  await expect(page.locator('.wardrobe-item')).toHaveCount(4);
+  await page.evaluate(async () => {
+    const db = await new Promise((resolve,reject)=> { const request=indexedDB.open('craftndetail-wardrobe',1);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error); });
+    await new Promise((resolve,reject)=> {
+      const transaction=db.transaction('items','readwrite');const store=transaction.objectStore('items');
+      store.put({id:'sample-top',name:'My renamed tee',category:'top',activity:'Work',image:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>'});
+      store.put({id:'customer-upload',name:'Personal uploaded shirt',category:'top',activity:'Everyday',image:'data:image/png;base64,upload-placeholder'});
+      transaction.oncomplete=resolve;transaction.onerror=()=>reject(transaction.error);
+    });
+    db.close();
+  });
+  await page.reload();
+  await page.getByRole('button',{name:'My wardrobe',exact:true}).click();
+  await expect(page.locator('.wardrobe-item')).toHaveCount(5);
+  const tee=page.locator('.wardrobe-item').filter({hasText:'My renamed tee'});
+  await expect(tee).toContainText('Work');
+  await expect(tee.locator('img')).not.toHaveAttribute('src',/^data:image\/svg/);
+  await expect(page.locator('.wardrobe-item').filter({hasText:'Personal uploaded shirt'}).locator('img')).toHaveAttribute('src','data:image/png;base64,upload-placeholder');
+});
