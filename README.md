@@ -4,6 +4,8 @@ A clickable class demonstration for a tailoring and clothing studio concept in B
 
 ## Open the clickable website
 
+If a chat file preview says **Couldn't load this file**, download the [offline demo ZIP from GitHub](https://github.com/jaw6027/MGMT-3400-Team-5/raw/refs/heads/main/downloads/CraftNDetail-demo.zip) instead. Extract the ZIP, then open `CraftNDetail-demo.html` with a desktop web browser. Do not open the HTML inside the ZIP or a document preview. The archive contains the self-contained app and a short instruction file; it does not require installation. Download a new ZIP for updates. To refresh this archive after source changes, run `npm run package:demo` (Node.js and Python 3 are needed only to build/package, not to view it).
+
 The repository includes a prebuilt GitHub Pages site in `docs/`. A repository administrator can enable hosting once:
 
 1. In GitHub, open **Settings → Pages**.

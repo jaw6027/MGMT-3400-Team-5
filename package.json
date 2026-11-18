@@ -10,7 +10,8 @@
     "test": "playwright test",
     "build:pages": "vite build --base=./ --outDir docs",
     "export:demo": "node scripts/export-demo.mjs",
-    "postbuild:pages": "node -e \"require('node:fs').writeFileSync('docs/.nojekyll','')\""
+    "postbuild:pages": "node -e \"require('node:fs').writeFileSync('docs/.nojekyll','')\"",
+    "package:demo": "npm run export:demo && python3 scripts/package-demo.py"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
