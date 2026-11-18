@@ -47,6 +47,11 @@ test('wardrobe upload, activity filters, edit, mannequin outfit and reload', asy
   await card.getByRole('button', {name:'Add to outfit'}).click();
   await page.locator('.wardrobe-item').filter({hasText:'Cream everyday tee'}).getByRole('button',{name:'Add to outfit'}).click();
   await expect(page.locator('.outfit-piece')).toHaveCount(2);
+  await page.locator('#placement-controls summary').click();
+  await page.locator('#bottom-scale').focus();
+  await page.keyboard.press('ArrowRight');
+  await page.locator('#bottom-offset').focus();
+  await page.keyboard.press('ArrowRight');
   await page.getByLabel('Outfit name',{exact:true}).fill('Studio day');
   await page.getByRole('button', {name:'Save outfit',exact:false}).click();
   await expect(page.locator('#saved-outfits')).toContainText('Studio day');
@@ -55,6 +60,8 @@ test('wardrobe upload, activity filters, edit, mannequin outfit and reload', asy
   await expect(page.locator('.wardrobe-item')).toHaveCount(5);
   await page.getByRole('button', {name:'Open outfit'}).click();
   await expect(page.locator('.outfit-piece')).toHaveCount(2);
+  await expect(page.locator('#bottom-scale')).toHaveValue('101');
+  await expect(page.locator('#bottom-offset')).toHaveValue('1');
   await card.getByRole('button', {name:'Edit details'}).click();
   await page.getByLabel('Item name',{exact:true}).fill('Renamed skirt');
   await page.getByRole('button',{name:'Save item',exact:true}).click();
@@ -84,15 +91,16 @@ test('drag clothing onto mannequin, replace a piece, save and clear a look', asy
   const board = page.locator('#outfit-drop-zone');
   await expect(tee.locator('img')).toHaveJSProperty('complete',true);
   expect(await tee.locator('img').evaluate(img=>img.naturalWidth)).toBeGreaterThan(0);
-  // Put both source and destination in view before the mouse button is held.
-  await board.scrollIntoViewIfNeeded();
+  // Start from the initial laptop viewport, including scrolling during the drag.
   await tee.dragTo(board);
   await expect(page.locator('#outfit-slots')).toContainText('Cream everyday tee');
   await trousers.dragTo(board);
   await expect(page.locator('.outfit-piece')).toHaveCount(2);
+  await expect(page.locator('#styled-look')).toBeVisible();
   await shirt.dragTo(board);
   await expect(page.locator('.outfit-piece')).toHaveCount(2);
   await expect(page.locator('#outfit-slots')).toContainText('Studio work shirt');
+  await expect(page.locator('#styled-look img')).toHaveAttribute('style',/top: -100%/);
   await expect(page.locator('#outfit-slots')).not.toContainText('Cream everyday tee');
   await expect(board).not.toHaveClass(/drag-over|drag-ready/);
   await page.getByLabel('Outfit name',{exact:true}).fill('Dragged work outfit');
@@ -104,6 +112,41 @@ test('drag clothing onto mannequin, replace a piece, save and clear a look', asy
   await page.getByRole('button', {name:'Open outfit',exact:true}).click();
   await expect(page.locator('.outfit-piece')).toHaveCount(2);
   await expect(page.locator('#outfit-slots')).toContainText('Studio work shirt');
+});
+
+test('touch drag uses a visible drop target and cancelling a drag preserves outfit', async ({browser}) => {
+  const context = await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+  const page = await context.newPage();
+  await page.goto('/');
+  await page.getByRole('button',{name:'My wardrobe',exact:true}).tap();
+  const source = page.locator('[data-drag-item="sample-top"]');
+  await source.scrollIntoViewIfNeeded();
+  const rect = await source.boundingBox();
+  const cdp = await context.newCDPSession(page);
+  const point = {x:rect.x+rect.width/2,y:rect.y+rect.height/2};
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...point,id:1}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:point.x+15,y:point.y-15,id:1}]});
+  const dock = page.locator('.floating-drop-zone');
+  await expect(dock).toBeVisible();
+  const target = await dock.boundingBox();
+  const end = {x:target.x+target.width/2,y:target.y+target.height/2};
+  for(let step=1;step<=8;step++) await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:point.x+(end.x-point.x)*step/8,y:point.y+(end.y-point.y)*step/8,id:1}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await expect(page.locator('#outfit-slots')).toContainText('Cream everyday tee');
+  await expect(dock).toHaveCount(0);
+  await expect(page.locator('.garment-drag-ghost')).toHaveCount(0);
+  const other = page.locator('[data-drag-item="sample-work"]');
+  await other.scrollIntoViewIfNeeded();
+  const otherRect = await other.boundingBox();
+  const start = {x:otherRect.x+otherRect.width/2,y:otherRect.y+otherRect.height/2};
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...start,id:2}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:start.x+20,y:start.y-20,id:2}]});
+  await expect(dock).toBeVisible();
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
+  await expect(dock).toHaveCount(0);
+  await expect(page.locator('#outfit-slots')).toContainText('Cream everyday tee');
+  await expect(page.locator('#outfit-slots')).not.toContainText('Studio work shirt');
+  await context.close();
 });
 
 test('existing sample photos update without losing edited details or uploaded clothing', async ({page}) => {
