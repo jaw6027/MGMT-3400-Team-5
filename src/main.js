@@ -20,7 +20,7 @@ let toastTimer;
 function toast(message) { $('#toast').textContent = message; $('#toast').style.display = 'block'; clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').style.display = 'none', 4000); }
 function save(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { toast('Browser storage is full or unavailable. Your changes were not saved.'); return false; } }
 function page(name) {
-  for (const id of ['design','requests','wardrobe']) $(`#${id}-page`).hidden = id !== name;
+  for (const id of ['design','requests','wardrobe','quotes']) $(`#${id}-page`).hidden = id !== name;
   $$('.nav-link').forEach(button => button.classList.toggle('active', button.dataset.page === name));
   if (name === 'requests') renderRequests();
   if (name === 'wardrobe') renderWardrobe();
@@ -305,3 +305,107 @@ $('#clear-outfit').addEventListener('click', () => {
   toast('Outfit board cleared. Your saved looks are unchanged.');
 });
 updateCount(); initializeWardrobe();
+
+// Quote records are separate from customer profiles, requests and wardrobe data.
+const quoteFields = [
+  ['materials','Material cost ($)',5,'0.01',1000000],
+  ['hours','Labor hours',1,'0.01',10000],
+  ['rate','Hourly labor rate ($)',25,'0.01',1000000],
+  ['overhead','Overhead allocation ($)',10,'0.01',1000000],
+  ['fitting','Additional fitting time (minutes)',0,'1',600000],
+  ['margin','Target profit margin (%)',30,'0.01',99.99],
+  ['price','Fixed quoted price ($)',60,'0.01',1000000000000000],
+];
+let quotes = read('cnd-service-quotes', []);
+if (!Array.isArray(quotes)) quotes = [];
+let activeQuoteId = null;
+$('nav').insertAdjacentHTML('beforeend','<button class="nav-link" data-page="quotes">Service quotes</button>');
+$('main').insertAdjacentHTML('beforeend', `<section id="quotes-page" hidden>
+  <div class="intro"><div><p class="eyebrow">STAFF · VENTURE ECONOMICS</p><h1>Service Quote<br><em>Calculator.</em></h1><p>Explore costs, pricing and the time behind a great fit.</p></div><button class="secondary" id="new-quote">+ New quote</button></div>
+  <p class="upload-note">All starting numbers are hypothetical classroom examples, not a published price list. Quotes stay in this browser. Tailor approval is required before confirmation; this does not book work or take payment.</p>
+  <div class="quote-layout"><form class="panel quote-form" id="quote-form">
+    <h2>The service & costs</h2>
+    <label for="quote-service">Alteration or repair service</label><input id="quote-service" list="quote-services" required maxlength="120" value="Shorten skirt"/><datalist id="quote-services"><option value="Shorten skirt"></option><option value="Hem trousers"></option><option value="Replace zipper"></option><option value="Repair seam"></option></datalist>
+    <p class="field-note">Choose an example or enter a custom service. Service choices do not set prices.</p>
+    <div class="quote-inputs">${quoteFields.map(([key,label,value,step,max]) => `<div><label for="quote-${key}">${label}</label><input id="quote-${key}" name="${key}" type="number" min="0" max="${max}" step="${step}" required value="${value}"/></div>`).join('')}</div>
+    <p class="field-note">Fitting minutes are additional to labor hours and use the same hourly rate. Margin must be 0–99.99%. Fixed quoted price stays unchanged while costs change.</p>
+    <button type="button" class="secondary" id="use-suggested">Use suggested price as fixed quote</button>
+    <p id="quote-error" role="alert" class="field-note"></p>
+    <div class="quote-approval"><h3>Tailor review</h3><label for="quote-tailor">Approving tailor’s name</label><input id="quote-tailor" maxlength="80" autocomplete="off"/><label class="quote-check"><input id="quote-approved" type="checkbox"/> I am the reviewing tailor and approve this service, costs and fixed quoted price.</label><p class="field-note">Any change to the quote requires fresh approval. This classroom prototype records approval locally; it does not verify staff identity.</p></div>
+    <div class="quote-actions"><button type="submit" class="secondary">Save draft quote</button><button type="button" class="primary" id="confirm-quote" disabled>Confirm approved quote</button></div>
+    <p id="quote-status" role="status" class="field-note">Unsaved draft · awaiting tailor approval</p>
+  </form><aside class="panel quote-results"><p class="eyebrow">HYPOTHETICAL ESTIMATE · USD</p><h2>Know the economics.</h2>
+    <dl>${[['cost','Total estimated cost'],['suggested','Suggested customer price'],['profit','Estimated profit at suggested price'],['margin','Profit margin at suggested price']].map(([key,label])=>`<div><dt>${label}</dt><dd id="result-${key}">—</dd></div>`).join('')}</dl>
+    <p class="field-note">Cost = materials + overhead + (labor hours + fitting minutes ÷ 60) × hourly rate. Suggested price = cost ÷ (1 − target margin). Prices round up to the nearest cent; profit uses that rounded price.</p>
+    <h3>Fitting time at a fixed quote</h3><p class="muted">The fixed quoted price does not change automatically. Extra fitting time reduces profit even when a new suggested price would be higher.</p>
+    <dl>${[['fixed','Fixed quoted price'],['before','Profit without additional fitting'],['fitting','Additional fitting cost / profit reduction'],['fixed-profit','Profit after additional fitting'],['fixed-margin','Profit margin at fixed quote']].map(([key,label])=>`<div><dt>${label}</dt><dd id="result-${key}">—</dd></div>`).join('')}</dl>
+    <p id="quote-loss" role="status" class="field-note"></p><p class="field-note">Margin = profit ÷ customer price × 100. At a zero price, margin is undefined. Estimates exclude tax and any expenses not entered above.</p>
+  </aside></div><section class="quote-saved"><h2>Saved service quotes</h2><p class="upload-note">Drafts and locally approved examples. Opening a saved quote starts a review and requires fresh approval before reconfirming.</p><div id="quote-list"></div></section>
+</section>`);
+const quoteForm = $('#quote-form');
+const money = value => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(value);
+const percent = value => value === null ? 'Undefined (zero price)' : `${value.toFixed(2)}%`;
+function quoteEstimate() {
+  if (!$('#quote-service').value.trim() || !quoteFields.every(([key]) => $(`#quote-${key}`).validity.valid)) return null;
+  const values = Object.fromEntries(quoteFields.map(([key]) => [key, $(`#quote-${key}`).valueAsNumber]));
+  if (!Object.values(values).every(Number.isFinite)) return null;
+  const base = values.materials + values.hours * values.rate + values.overhead;
+  const fittingCost = values.fitting / 60 * values.rate;
+  const cost = base + fittingCost;
+  const suggested = Math.max(0, Math.ceil(cost / (1 - values.margin / 100) * 100 - 1e-8) / 100);
+  return {...values,base,fittingCost,cost,suggested,profit:suggested-cost,fixedProfit:values.price-cost};
+}
+function updateQuote() {
+  const q = quoteEstimate();
+  $('#quote-error').textContent = q ? '' : 'Enter a service and valid nonnegative numbers within the input limits. Margin must be below 100%; fitting time uses whole minutes.';
+  $('#use-suggested').disabled = !q;
+  $('#confirm-quote').disabled = !q || !$('#quote-approved').checked || !$('#quote-tailor').value.trim();
+  const results = q ? {cost:money(q.cost),suggested:money(q.suggested),profit:money(q.profit),margin:percent(q.suggested ? q.profit/q.suggested*100 : null),fixed:money(q.price),before:money(q.price-q.base),fitting:money(q.fittingCost),'fixed-profit':money(q.fixedProfit),'fixed-margin':percent(q.price ? q.fixedProfit/q.price*100 : null)} : {};
+  $$('.quote-results dd').forEach(el => { el.textContent = results[el.id.replace('result-','')] ?? '—'; });
+  $('#quote-loss').textContent = q && q.fixedProfit < 0 ? 'This fixed quote would make an estimated loss. Review costs or pricing before approval.' : '';
+}
+function resetQuoteApproval() {
+  $('#quote-approved').checked = false;
+  $('#quote-tailor').value = '';
+  $('#quote-status').textContent = 'Unsaved draft · awaiting tailor approval';
+}
+quoteForm.addEventListener('input', event => {
+  if (!['quote-approved','quote-tailor'].includes(event.target.id)) resetQuoteApproval();
+  else $('#quote-status').textContent = 'Unsaved review · confirm to record tailor approval';
+  updateQuote();
+});
+$('#use-suggested').addEventListener('click', () => {
+  const q = quoteEstimate(); if (!q) return;
+  $('#quote-price').value = q.suggested.toFixed(2); resetQuoteApproval(); updateQuote();
+});
+function renderQuotes() {
+  $('#quote-list').innerHTML = quotes.length ? quotes.map(q => `<article class="panel request-card"><span class="pill">${q.status === 'confirmed' ? 'Confirmed · local tailor approval' : 'Draft · awaiting approval'}</span><h3>${escape(q.service)}</h3><p>Hypothetical fixed quote: ${money(Number(q.values.price))}${q.status === 'confirmed' ? `<br>Approved by ${escape(q.tailor)} · ${escape(new Date(q.approvedAt).toLocaleString())}` : ''}</p><button type="button" class="secondary" data-open-quote="${escape(q.id)}">Open quote</button> <button type="button" class="text-button" data-delete-quote="${escape(q.id)}">Delete quote</button></article>`).join('') : '<p class="upload-note">No saved service quotes yet.</p>';
+}
+function saveQuote(confirmed) {
+  const q = quoteEstimate();
+  if (!quoteForm.reportValidity() || !q) return;
+  if (confirmed && (!$('#quote-approved').checked || !$('#quote-tailor').value.trim())) return;
+  const record = {id:activeQuoteId || crypto.randomUUID(),service:$('#quote-service').value.trim(),values:Object.fromEntries(quoteFields.map(([key])=>[key,q[key]])),status:confirmed?'confirmed':'draft',tailor:confirmed?$('#quote-tailor').value.trim():null,approvedAt:confirmed?new Date().toISOString():null};
+  const next = [record,...quotes.filter(item => item.id !== record.id)];
+  if (!save('cnd-service-quotes',next)) return;
+  quotes = next; activeQuoteId = record.id; renderQuotes();
+  $('#quote-status').textContent = confirmed ? `Confirmed locally with tailor approval by ${record.tailor}.` : 'Draft saved · awaiting tailor approval';
+  toast(confirmed?'Approved example quote confirmed in this browser.':'Draft quote saved in this browser.');
+}
+quoteForm.addEventListener('submit', event => { event.preventDefault(); saveQuote(false); });
+$('#confirm-quote').addEventListener('click', () => saveQuote(true));
+$('#new-quote').addEventListener('click', () => { quoteForm.reset(); activeQuoteId=null; resetQuoteApproval(); updateQuote(); });
+$('#quote-list').addEventListener('click', event => {
+  const open = event.target.closest('[data-open-quote]'), remove = event.target.closest('[data-delete-quote]');
+  if (open) {
+    const q = quotes.find(item => item.id === open.dataset.openQuote);
+    activeQuoteId=q.id; $('#quote-service').value=q.service;
+    quoteFields.forEach(([key]) => { $(`#quote-${key}`).value=q.values[key]; });
+    resetQuoteApproval(); updateQuote(); quoteForm.scrollIntoView({behavior:'smooth'});
+  }
+  if (remove) {
+    const next=quotes.filter(item=>item.id!==remove.dataset.deleteQuote);
+    if (save('cnd-service-quotes',next)) { quotes=next; if(activeQuoteId===remove.dataset.deleteQuote) { activeQuoteId=null; resetQuoteApproval(); updateQuote(); } renderQuotes(); }
+  }
+});
+updateQuote(); renderQuotes();
