@@ -1,4 +1,5 @@
 import './style.css';
+import { initializeCatalog, catalogRequestSummary } from './catalog.js';
 import teePhoto from './assets/tee.png';
 import trousersPhoto from './assets/trousers.png';
 import shirtPhoto from './assets/shirt.png';
@@ -20,7 +21,7 @@ let toastTimer;
 function toast(message) { $('#toast').textContent = message; $('#toast').style.display = 'block'; clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').style.display = 'none', 4000); }
 function save(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { toast('Browser storage is full or unavailable. Your changes were not saved.'); return false; } }
 function page(name) {
-  for (const id of ['design','requests','wardrobe','quotes']) $(`#${id}-page`).hidden = id !== name;
+  for (const id of ['design','requests','wardrobe','quotes','catalog']) $(`#${id}-page`).hidden = id !== name;
   $$('.nav-link').forEach(button => button.classList.toggle('active', button.dataset.page === name));
   if (name === 'requests') renderRequests();
   if (name === 'wardrobe') renderWardrobe();
@@ -57,21 +58,26 @@ $('#profile-form').addEventListener('submit', event => {
 });
 $('#customer-name').addEventListener('input', () => $('#customer-name').setCustomValidity(''));
 function requestSummary(request) {
+  if (request.kind === 'catalog') return catalogRequestSummary(request);
   return `<div class="summary"><strong>${escape(request.customer.name)}</strong> · ${escape(request.customer.email)}<br>Terracotta midi skirt · ${escape(request.change)}<br>Waist: ${escape(request.customer.waist || 'Not provided')} in · Hips: ${escape(request.customer.hips || 'Not provided')} in<br>Source: ${escape(request.customer.source)}<br><br>${escape(request.notes || 'No additional notes.')}<br><br>Price & timing: to be confirmed at a fitting.<br>Preview: prepared AI illustration, not a fit guarantee.</div>`;
 }
-$('#request-fitting').addEventListener('click', () => {
-  const request = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), customer:{...profile}, change: length === 'short' ? 'Shorten to knee length' : 'Keep original length; discuss options', notes:$('#notes').value.trim(),status:'Demo — awaiting fitting' };
-  $('#request-content').innerHTML = `<p class="eyebrow">LET’S TALK ABOUT YOUR FIT</p><h2>Review your fitting request.</h2><p class="muted">This is a presentation example. Saving it does not contact the studio or book an appointment.</p>${requestSummary(request)}<button class="primary" id="confirm-request">Save demo request <span>↗</span></button>`;
+function reviewRequest(request, {edit, saved} = {}) {
+  $('#request-content').innerHTML = `<p class="eyebrow">LET’S TALK ABOUT YOUR FIT</p><h2>Review your fitting request.</h2><p class="muted">This is a presentation example. Saving it does not contact the studio or book an appointment.</p>${requestSummary(request)}${edit ? '<button class="secondary" id="edit-request">Edit my idea</button>' : ''}<button class="primary" id="confirm-request">Save demo request <span>↗</span></button>`;
+  if (edit) $('#edit-request').addEventListener('click',()=>{$('#request-dialog').close();edit();});
   $('#confirm-request').addEventListener('click', () => {
     const next = [request,...requests]; if (!save('cnd-requests', next)) return; requests = next; updateCount();
+    if (saved) saved();
     $('#request-content').innerHTML = '<div class="success-mark">✓</div><p class="eyebrow">A POSSIBILITY, SAVED</p><h2>Your idea has a starting point.</h2><p class="muted">Your sample request is saved in this browser. In a future version, the studio would review it and contact you to arrange a fitting. No appointment has been booked.</p><button class="primary" id="see-requests">View my requests <span>→</span></button>';
     $('#see-requests').addEventListener('click', () => { $('#request-dialog').close(); page('requests'); });
   });
   $('#request-dialog').showModal();
+}
+$('#request-fitting').addEventListener('click', () => {
+  reviewRequest({ id: crypto.randomUUID(), createdAt: new Date().toISOString(), customer:{...profile}, change: length === 'short' ? 'Shorten to knee length' : 'Keep original length; discuss options', notes:$('#notes').value.trim(),status:'Demo — awaiting fitting' });
 });
 function updateCount() { $('#request-count').textContent = requests.length; }
 function renderRequests() {
-  $('#requests-list').innerHTML = requests.length ? requests.map((r,i) => `<article class="panel request-card"><span class="pill">${escape(r.status)}</span><h3>Skirt alteration · ${new Date(r.createdAt).toLocaleDateString()}</h3>${requestSummary(r)}<button class="text-button" data-delete-request="${i}">Remove demo request</button></article>`).join('') : '<div class="empty-state"><h2>Every great fit starts with an idea.</h2><p>Your saved demonstration requests will appear here.</p><button class="secondary" data-page="design">Explore the skirt example →</button></div>';
+  $('#requests-list').innerHTML = requests.length ? requests.map((r,i) => `<article class="panel request-card"><span class="pill">${escape(r.status)}</span><h3>${escape(r.kind === 'catalog' ? r.serviceName : 'Skirt alteration')} · ${new Date(r.createdAt).toLocaleDateString()}</h3>${requestSummary(r)}<button class="text-button" data-delete-request="${i}">Remove demo request</button></article>`).join('') : '<div class="empty-state"><h2>Every great fit starts with an idea.</h2><p>Your saved demonstration requests will appear here.</p><button class="secondary" data-page="design">Explore the skirt example →</button></div>';
   $('#clear-requests').hidden = !requests.length;
 }
 $('#requests-list').addEventListener('click', event => { const button = event.target.closest('[data-delete-request]'); if (!button) return; const next = requests.filter((_,i) => i !== +button.dataset.deleteRequest); if (save('cnd-requests', next)) { requests = next; updateCount(); renderRequests(); } });
@@ -409,3 +415,6 @@ $('#quote-list').addEventListener('click', event => {
   }
 });
 updateQuote(); renderQuotes();
+
+initializeCatalog({reviewRequest,getProfile:()=>profile});
+if (location.hash === '#services') page('catalog');

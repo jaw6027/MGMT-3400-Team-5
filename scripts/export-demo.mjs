@@ -9,6 +9,10 @@ for (const [variable, filename] of [['teePhoto','tee'],['trousersPhoto','trouser
   const base64 = (await readFile(new URL(`src/assets/${filename}.png`, root))).toString('base64');
   javascript = javascript.replace(`import ${variable} from './assets/${filename}.png';`, () => `const ${variable} = 'data:image/png;base64,${base64}';`);
 }
+javascript = javascript.replace("import { initializeCatalog, catalogRequestSummary } from './catalog.js';", '');
+const catalogData = (await readFile(new URL('src/catalog-data.js', root), 'utf8')).replaceAll('export const ', 'const ');
+const catalog = (await readFile(new URL('src/catalog.js', root), 'utf8')).replace("import { serviceGroups, services } from './catalog-data.js';", '').replaceAll('export function ', 'function ');
+javascript = catalogData + '\n' + catalog + '\n' + javascript;
 const image = (await readFile(new URL('public/images/skirt-comparison.png', root))).toString('base64');
 html = html.replace('</head>', () => `<style>${css}</style></head>`)
   .replaceAll('./images/skirt-comparison.png', `data:image/png;base64,${image}`)

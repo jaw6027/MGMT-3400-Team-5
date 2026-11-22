@@ -2,6 +2,16 @@
 
 A clickable class demonstration for a tailoring and clothing studio concept in Bakersfield, California. Built with plain JavaScript, CSS and Vite. No API keys or external services are required.
 
+## Service catalog (Priority 1 — Oshea)
+
+Open **Services** to browse 48 potential services across fit adjustments, silhouette changes, repairs, personalization, thrift transformations, and custom clothing. Search combines with category filters; each card includes options and garment-review considerations. The `#services` URL fragment opens the catalog directly.
+
+Choose **Describe my idea** on a card to preselect the service, or **Describe my own idea** for an unlisted project. Describe the garment and desired change; optional details cover condition/fabric/previous alterations, details to preserve, preferred fit/measurements, inspiration references, budget, requested date, and leftover fabric. References are stored as text, not uploaded photos or generated previews. Review, edit, then save to **My requests** under the current sample profile. Older skirt requests remain compatible. Unsaved fields remain while browsing but reset on reload; saved requests persist only in this browser. Storage failures keep the review open and report that nothing was saved.
+
+This is a classroom exploration catalog, not a promise of service availability. Every garment requires assessment; no prices or turnaround times are quoted. Requests do not contact the studio or create bookings. Use fictional customer details. The wardrobe and quote calculator remain separate workflows; catalog selections do not automatically price a job or change wardrobe records.
+
+Catalog content is in `src/catalog-data.js`; browsing/intake is in `src/catalog.js`. Validate with the browser suite, build Pages, and export the standalone demo after changes. The committed ZIP download below predates this catalog; generate a fresh standalone HTML with `npm run export:demo` for an offline copy with Services.
+
 ## Open the clickable website
 
 If a chat file preview says **Couldn't load this file**, download the [offline demo ZIP from GitHub](https://github.com/jaw6027/MGMT-3400-Team-5/raw/refs/heads/main/downloads/CraftNDetail-demo.zip) instead. Extract the ZIP, then open `CraftNDetail-demo.html` with a desktop web browser. Do not open the HTML inside the ZIP or a document preview. The archive contains the self-contained app and a short instruction file; it does not require installation. Download a new ZIP for updates. To refresh this archive after source changes, run `npm run package:demo` (Node.js and Python 3 are needed only to build/package, not to view it).
