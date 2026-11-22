@@ -28,7 +28,8 @@ test('catalog combines search and category filters with a useful empty state',as
 
 test('service idea can be reviewed, edited, saved and reopened with legacy requests intact',async({page})=>{
   await page.goto('/');
-  await page.evaluate(()=>localStorage.setItem('cnd-requests',JSON.stringify([{id:'old',customer:{name:'Old Demo',email:'old@example.com'},createdAt:'2026-11-01T12:00:00Z',change:'Shorten to knee length',notes:'Keep this older request',status:'Demo — awaiting fitting'}])));
+  await page.evaluate(()=>localStorage.setItem('cnd-requests',JSON.stringify([{id:'old',customer:{name:'Old Demo',email:'jamie@example.com'},createdAt:'2026-11-01T12:00:00Z',change:'Shorten to knee length',notes:'Keep this older request',status:'Demo — awaiting fitting'}])));
+  // Legacy request for the current customer; unrelated customers are tested in fitting.spec.js.
   // Seed once; subsequent reloads must use the data saved by the app.
   await openCatalog(page);
   await page.getByRole('button',{name:'Describe my idea: Oversized shirt redesign',exact:true}).click();
