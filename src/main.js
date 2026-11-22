@@ -1,4 +1,6 @@
 import './style.css';
+import './fitting.css';
+import { initializeFitting } from './fitting.js';
 import { initializeCatalog, catalogRequestSummary } from './catalog.js';
 import teePhoto from './assets/tee.png';
 import trousersPhoto from './assets/trousers.png';
@@ -12,18 +14,21 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const escape = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
-const defaultProfile = {name:'Jamie Lee',email:'jamie@example.com',waist:'29',hips:'39',source:'Customer — unverified'};
+const defaultProfile = {name:'Jamie Lee',email:'jamie@example.com',phone:''};
 let profile = {...defaultProfile, ...read('cnd-profile', {})};
 let requests = read('cnd-requests', []);
 if (!Array.isArray(requests)) requests = [];
+let fitting;
+const customerContact = () => ({customerId:profile.customerId,name:profile.name,email:profile.email,phone:profile.phone});
 let length = 'short';
 let toastTimer;
 function toast(message) { $('#toast').textContent = message; $('#toast').style.display = 'block'; clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').style.display = 'none', 4000); }
 function save(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { toast('Browser storage is full or unavailable. Your changes were not saved.'); return false; } }
 function page(name) {
-  for (const id of ['design','requests','wardrobe','quotes','catalog']) $(`#${id}-page`).hidden = id !== name;
+  for (const id of ['design','requests','wardrobe','quotes','catalog','fitting']) $(`#${id}-page`).hidden = id !== name;
   $$('.nav-link').forEach(button => button.classList.toggle('active', button.dataset.page === name));
   if (name === 'requests') renderRequests();
+  if (name === 'fitting') fitting.render();
   if (name === 'wardrobe') renderWardrobe();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -44,22 +49,12 @@ $$('[data-view]').forEach(button => button.addEventListener('click', () => {
   $('#comparison').classList.toggle('single', button.dataset.view === 'after');
   $$('[data-view]').forEach(b => { b.classList.toggle('selected', b === button); b.setAttribute('aria-pressed', String(b === button)); });
 }));
-function openProfile() {
-  Object.entries(profile).forEach(([name,value]) => { const input = $(`[name="${name}"]`, $('#profile-form')); if (input) input.value = value; });
-  $('#profile-dialog').showModal();
-}
+function openProfile() { fitting.openProfile(); }
 $('#open-profile').addEventListener('click',openProfile);
 $('#measurements-link').addEventListener('click',openProfile);
-$('#profile-form').addEventListener('submit', event => {
-  event.preventDefault(); const next = Object.fromEntries(new FormData(event.target));
-  if (!next.name.trim()) { $('#customer-name').setCustomValidity('Please enter a sample customer name.'); $('#customer-name').reportValidity(); return; }
-  if (!save('cnd-profile', next)) return;
-  profile = next; $('#profile-dialog').close(); toast('Sample profile saved in this browser.');
-});
-$('#customer-name').addEventListener('input', () => $('#customer-name').setCustomValidity(''));
 function requestSummary(request) {
   if (request.kind === 'catalog') return catalogRequestSummary(request);
-  return `<div class="summary"><strong>${escape(request.customer.name)}</strong> · ${escape(request.customer.email)}<br>Terracotta midi skirt · ${escape(request.change)}<br>Waist: ${escape(request.customer.waist || 'Not provided')} in · Hips: ${escape(request.customer.hips || 'Not provided')} in<br>Source: ${escape(request.customer.source)}<br><br>${escape(request.notes || 'No additional notes.')}<br><br>Price & timing: to be confirmed at a fitting.<br>Preview: prepared AI illustration, not a fit guarantee.</div>`;
+  return `<div class="summary"><strong>${escape(request.customer.name)}</strong> · ${escape(request.customer.email)}<br>Terracotta midi skirt · ${escape(request.change)}<br>${escape(request.notes || 'No additional notes.')}<br><br>Price & timing: to be confirmed at a fitting.<br>Measurements are managed with permission in Customer fitting, not copied into this request.<br>Preview: prepared AI illustration, not a fit guarantee.</div>`;
 }
 function reviewRequest(request, {edit, saved} = {}) {
   $('#request-content').innerHTML = `<p class="eyebrow">LET’S TALK ABOUT YOUR FIT</p><h2>Review your fitting request.</h2><p class="muted">This is a presentation example. Saving it does not contact the studio or book an appointment.</p>${requestSummary(request)}${edit ? '<button class="secondary" id="edit-request">Edit my idea</button>' : ''}<button class="primary" id="confirm-request">Save demo request <span>↗</span></button>`;
@@ -67,21 +62,17 @@ function reviewRequest(request, {edit, saved} = {}) {
   $('#confirm-request').addEventListener('click', () => {
     const next = [request,...requests]; if (!save('cnd-requests', next)) return; requests = next; updateCount();
     if (saved) saved();
-    $('#request-content').innerHTML = '<div class="success-mark">✓</div><p class="eyebrow">A POSSIBILITY, SAVED</p><h2>Your idea has a starting point.</h2><p class="muted">Your sample request is saved in this browser. In a future version, the studio would review it and contact you to arrange a fitting. No appointment has been booked.</p><button class="primary" id="see-requests">View my requests <span>→</span></button>';
+    $('#request-content').innerHTML = '<div class="success-mark">✓</div><p class="eyebrow">A POSSIBILITY, SAVED</p><h2>Your idea has a starting point.</h2><p class="muted">Your sample request is saved in this browser. You can now schedule a sample fitting for this request. No appointment has been booked and nothing has been sent to the studio.</p><button class="primary" id="see-requests">View my requests <span>→</span></button><button type="button" class="secondary" id="fit-book-saved">Schedule a fitting for this request</button>';
     $('#see-requests').addEventListener('click', () => { $('#request-dialog').close(); page('requests'); });
+    $('#fit-book-saved').addEventListener('click', () => { $('#request-dialog').close(); fitting.openRequest(request.id,{book:true}); });
   });
   $('#request-dialog').showModal();
 }
 $('#request-fitting').addEventListener('click', () => {
-  reviewRequest({ id: crypto.randomUUID(), createdAt: new Date().toISOString(), customer:{...profile}, change: length === 'short' ? 'Shorten to knee length' : 'Keep original length; discuss options', notes:$('#notes').value.trim(),status:'Demo — awaiting fitting' });
+  reviewRequest({ id: crypto.randomUUID(), createdAt: new Date().toISOString(), customer:customerContact(), change: length === 'short' ? 'Shorten to knee length' : 'Keep original length; discuss options', notes:$('#notes').value.trim(),status:'Demo — awaiting fitting' });
 });
-function updateCount() { $('#request-count').textContent = requests.length; }
-function renderRequests() {
-  $('#requests-list').innerHTML = requests.length ? requests.map((r,i) => `<article class="panel request-card"><span class="pill">${escape(r.status)}</span><h3>${escape(r.kind === 'catalog' ? r.serviceName : 'Skirt alteration')} · ${new Date(r.createdAt).toLocaleDateString()}</h3>${requestSummary(r)}<button class="text-button" data-delete-request="${i}">Remove demo request</button></article>`).join('') : '<div class="empty-state"><h2>Every great fit starts with an idea.</h2><p>Your saved demonstration requests will appear here.</p><button class="secondary" data-page="design">Explore the skirt example →</button></div>';
-  $('#clear-requests').hidden = !requests.length;
-}
-$('#requests-list').addEventListener('click', event => { const button = event.target.closest('[data-delete-request]'); if (!button) return; const next = requests.filter((_,i) => i !== +button.dataset.deleteRequest); if (save('cnd-requests', next)) { requests = next; updateCount(); renderRequests(); } });
-$('#clear-requests').addEventListener('click', () => { if (save('cnd-requests', [])) { requests = []; renderRequests(); updateCount(); } });
+function updateCount() { $('#request-count').textContent = fitting ? fitting.customerRequests().length : requests.length; }
+function renderRequests() { fitting.renderRequests(); }
 
 // Wardrobe data uses IndexedDB so photographs do not fill the small localStorage quota.
 const wardrobeHTML = `<section id="wardrobe-page" hidden><div class="intro"><div><p class="eyebrow">YOUR WARDROBE, REIMAGINED</p><h1>My wardrobe</h1><p>Pick your pieces. Put together a look for your day.</p></div><button class="secondary" id="add-garment">+ Add clothing</button></div><p class="upload-note">Drag a clothing photo onto the mannequin, or use “Add to outfit.” Your wardrobe and saved looks stay in this browser.</p><div class="wardrobe-layout"><div><div class="wardrobe-tools" role="group" aria-label="Filter by activity">${['All','Lounge','Athletic','Work','Everyday'].map((s,i) => `<button class="filter-btn ${i===0?'selected':''}" data-filter="${s}" aria-pressed="${i===0}">${s}</button>`).join('')}</div><p class="wardrobe-count" id="wardrobe-count"></p><div class="wardrobe-grid" id="wardrobe-grid"></div><div id="saved-outfits"></div></div><aside class="panel outfit-panel"><p class="eyebrow">THE OUTFIT BOARD</p><h2>Build an outfit</h2><p class="muted">Drop a piece onto the mannequin to try a combination.</p><div class="mannequin-stage" id="outfit-drop-zone" role="region" aria-label="Drop clothing here to build an outfit"><svg viewBox="0 0 250 350" role="img" aria-label="Neutral dressmaker mannequin outfit board"><defs><linearGradient id="cloth"><stop stop-color="#d7c9b3"/><stop offset=".5" stop-color="#f7efdf"/><stop offset="1" stop-color="#d9cbb4"/></linearGradient></defs><ellipse cx="125" cy="332" rx="53" ry="7" fill="#c9b9a0"/><path d="M125 40V327M91 327H159" stroke="#8e7353" stroke-width="5"/><path d="M108 42L108 57Q89 63 76 81L90 147L85 205Q125 225 165 205L160 147L174 81Q161 63 142 57L142 42Z" fill="url(#cloth)" stroke="#b6a28a"/><path d="M125 44V214M90 147Q125 155 160 147" stroke="#b6a28a" fill="none" stroke-dasharray="3 4"/><ellipse cx="125" cy="42" rx="17" ry="5" fill="#a98e6b"/></svg><div id="outfit-layers"></div><div id="styled-look" class="styled-look" hidden><img src="${styledOutfitsPhoto}" alt="Prepared AI styling of the selected sample outfit on a neutral mannequin"/></div><span class="drop-hint" aria-hidden="true">Drop clothing here</span></div><label for="outfit-activity">Plan for</label><select id="outfit-activity"><option>Everyday</option><option>Lounge</option><option>Athletic</option><option>Work</option></select><p id="preview-type" class="field-note" aria-live="polite">Choose a top and bottom for a dressed sample preview.</p><details id="placement-controls"><summary>Adjust photo placement</summary><label for="top-scale">Top size</label><input id="top-scale" type="range" min="60" max="150" value="100"/><label for="top-offset">Top height</label><input id="top-offset" type="range" min="-40" max="40" value="0"/><label for="bottom-scale">Bottom size</label><input id="bottom-scale" type="range" min="60" max="150" value="100"/><label for="bottom-offset">Bottom height</label><input id="bottom-offset" type="range" min="-40" max="40" value="0"/></details><div id="outfit-slots"></div><label for="outfit-name">Outfit name</label><input id="outfit-name" maxlength="80" placeholder="Monday at the studio"/><button class="primary" id="save-outfit">Save outfit <span>+</span></button><button class="text-button" id="clear-outfit">Clear outfit board</button><p class="field-note">Sample combinations use prepared dressed previews. Uploaded clothing uses adjustable photo placement; body fit is not calculated.</p></aside></div></section>`;
@@ -416,5 +407,11 @@ $('#quote-list').addEventListener('click', event => {
 });
 updateQuote(); renderQuotes();
 
-initializeCatalog({reviewRequest,getProfile:()=>profile});
+fitting = initializeFitting({
+  read,escape,toast,page,money,requestSummary,updateCount,
+  getProfile:()=>profile,setProfile:value=>{profile=value;},
+  getRequests:()=>requests,setRequests:value=>{requests=value;},getQuotes:()=>quotes,
+});
+updateCount();
+initializeCatalog({reviewRequest,getProfile:customerContact});
 if (location.hash === '#services') page('catalog');

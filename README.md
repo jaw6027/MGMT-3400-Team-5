@@ -43,7 +43,7 @@ Open the development address printed by Vite. `npm run build` creates a static `
 ## Presentation walkthrough
 
 1. In **Design studio**, compare the terracotta skirt before and after shortening on neutral dressmaker mannequins. Switch between original and knee length, and side-by-side and proposed look.
-2. Open **Jamie's profile** to edit fictional contact details, optional measurements in inches, and their source. These measurements do not reshape the mannequin.
+2. Open **Jamie's profile** to edit fictional contact details. Its measurements link opens **Customer fitting → Measurements**, with units, a home guide, and explicit storage permission. Measurements do not reshape the mannequin.
 3. Add alteration notes, review a fitting request, and save it. **My requests** shows the saved request. Nothing is sent or booked; prices and timing require a fitting.
 4. Open **My wardrobe**. Four realistic AI-generated sample product photos are included. Add several garment photos, select their type and activity, and edit items individually afterward.
 5. Filter by lounge, athletic, work, or everyday use. Drag garment photos onto the mannequin outfit board, or use the accessible **Add to outfit** buttons. A piece automatically goes into its top, bottom, or shoes slot; adding another of the same type replaces it. Name and save a look, or clear the current board without deleting saved outfits. Reload to demonstrate persistence.
@@ -66,6 +66,20 @@ The separate **Fixed quoted price** stays unchanged as costs change. Compare pro
 
 Save drafts, reopen/edit them, or delete them. Quote records use the separate `cnd-service-quotes` localStorage key and do not change customer, request or wardrobe records. Confirmation requires the reviewing tailor's name and approval checkbox. Editing quote inputs or reopening a record requires fresh approval. Saving an edited record as a draft replaces its previous confirmation. This is a local classroom approval record, not authenticated authorization or an immutable audit trail; no customer message, payment or booking is created. Browser data does not sync and is lost when site storage is cleared.
 
+## Customer fitting
+
+The **Customer fitting** section connects to the existing profile, My requests, and Service quotes. It has Appointments, Measurements, and Orders and fit checks tabs. Use fictional details only; all records are local to this browser. Sample staff access is a view switch, not authentication, and sample email reminders are previews that are never sent.
+
+- **Appointments:** book an initial, adjustment, or final fitting against a labeled Tuesday–Saturday sample schedule. Availability is checked across customers for each tailor. Rescheduling keeps the same appointment; canceling an appointment leaves the clothing order active. Final checks require that customer's order to be ready for check up.
+- **Measurements:** use the existing customer identity, illustrated tape-placement guides, inches/centimeters (2.54 cm per inch), measurement date, and who measured. Neither storage-permission answer is preselected. Declined measurements stay with the current job and are removed on completion or cancellation, including structured legacy request copies; another active job's measurements and contact details remain. Staff must record permission too, and can manually check studio measurements. New requests copy contact details only, not body measurements. Old unconsented profile measurements are not automatically reused.
+- **Orders:** save a fitting request first. In sample staff view, accept the work and attach a confirmed quote from the existing Service quotes calculator. In customer view, explicitly agree to the offered service and price to create an order. Work statuses are exactly `on going`, `ready for check up`, and `complete`. Cancellation is separate. The accepted price reference stays fixed if a quote is later edited.
+- **Fit checks and pickup:** completion is rejected by the persistence logic until all required checks pass, all fit problems are resolved, and customer fit approval is recorded. A new problem reopens work and clears approval; resolution does not supply approval. Pickup and its date are recorded separately, only after completion.
+- **Questions:** link questions to appointments or orders; staff reply and record next steps. A general question does not block completion. Staff can explicitly record a question about poor fit as a linked open fit problem.
+
+Workflow records use `cnd-fitting-v1`; profile and request changes update the existing `cnd-profile` and `cnd-requests` records. Wardrobe storage and the quote calculator's approval rules are unchanged. Legacy requests retain stable customer ownership; another customer's records are hidden from the current sample customer's view and remain available to the sample staff customer selector. Linked requests cannot be removed while needed for fitting history. These UI filters are not account security. Free-text notes are not automatically redacted; never enter real customer information.
+
+After changing this section, run `npm run build:pages` and `npm run package:demo` to refresh the checked-in Pages site and downloadable demo. `npm run export:demo` embeds the fitting module, styles, diagrams, and existing images into the single offline HTML file.
+
 ## Validation
 
 ```sh
@@ -75,9 +89,11 @@ npm test
 
 Browser tests use Playwright with `/usr/bin/chromium` in this cloud environment. Set `CHROMIUM_PATH` to a compatible local Chromium executable elsewhere. Tests cover preview choices, sample profile/request persistence, photo upload, wardrobe filters and editing, saved outfits and removal, phone layout, real Chromium touch input, cancellation, dressed preview selection, and saved placement controls. Quote tests additionally cover multiple pricing examples, fitting-time losses, zero costs/prices, invalid inputs, local draft persistence, approval requirements/reset, and navigation at phone, tablet and desktop widths.
 
+Customer fitting tests also exercise overlapping appointments, cross-customer restrictions, consent and measurement deletion across active jobs and reloads, unit conversion, quote agreement, invalid completion attempts, reopened fit problems, and separate pickup. Export tests check that the bundled HTML starts without module imports or external assets.
+
 ## Team integration
 
-No customer, appointment, economics or service-catalog module was present when this section was created. Before joining sections, agree on the service list, customer identifiers, measurement units/source/date and recheck process, fitting-request handoff, pricing ownership, and who owns shared navigation/storage. Keep payment and confirmed orders separate from consultation requests. All current prices/dates are intentionally unconfirmed.
+Services, Design studio, My requests, My wardrobe, Service quotes, and Customer fitting share the existing navigation. Customer fitting receives current profiles, requests, and confirmed quotes through an explicit bridge in `src/main.js`; it does not replace the catalog, wardrobe, or pricing calculator. Keep payment and real confirmed orders separate from this browser-only class demonstration.
 
 Prototype imagery, including the four transparent sample garment product photos, was generated with OpenAI image generation. The lighter interface uses white cards, charcoal text, and muted teal accents. Existing built-in sample items receive the new imagery without changing their names, tags, or saved outfit references; uploaded clothing and deleted samples are preserved.
 

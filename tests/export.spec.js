@@ -1,0 +1,32 @@
+import {test,expect} from '@playwright/test';
+import {execFileSync} from 'node:child_process';
+import {readFileSync} from 'node:fs';
+
+test('single-file export starts with fitting, catalog and wardrobe assets embedded',async({page})=>{
+  execFileSync(process.execPath,['scripts/export-demo.mjs']);
+  const html=readFileSync('exports/CraftNDetail-demo.html','utf8');
+  const errors=[],requests=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  page.on('request',request=>requests.push(request.url()));
+  await page.route('**/offline-demo',route=>route.fulfill({contentType:'text/html',body:html}));
+  await page.goto('/offline-demo');
+  await expect(page.locator('script[src], link[rel=stylesheet]')).toHaveCount(0);
+  await page.getByRole('button',{name:'Services',exact:true}).click();
+  await expect(page.locator('.service-card')).toHaveCount(48);
+  await page.getByRole('button',{name:'My wardrobe',exact:true}).click();
+  await expect(page.locator('.wardrobe-item')).toHaveCount(4);
+  await page.getByRole('button',{name:'Customer fitting',exact:true}).click();
+  await page.getByRole('tab',{name:'Measurements',exact:true}).click();
+  await page.locator('#fit-guide summary').click();
+  await expect(page.locator('#fit-guide svg')).toHaveCount(6);
+  await page.getByRole('button',{name:'Design studio',exact:true}).click();
+  await page.locator('#request-fitting').click();
+  await page.getByRole('button',{name:'Save demo request',exact:false}).click();
+  await page.getByRole('button',{name:'Schedule a fitting for this request',exact:true}).click();
+  await expect(page.locator('#fit-job')).toHaveValue(/^request:/);
+  await page.locator('#fit-description').fill('Offline skirt consultation');
+  await page.getByRole('button',{name:'Book sample appointment',exact:true}).click();
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('cnd-fitting-v1')).appointments.length)).toBe(1);
+  expect(errors).toEqual([]);
+  expect(requests.filter(url=>!url.startsWith('data:'))).toEqual(['http://127.0.0.1:5173/offline-demo']);
+});
