@@ -98,3 +98,14 @@ Services, Design studio, My requests, My wardrobe, Service quotes, and Customer 
 Prototype imagery, including the four transparent sample garment product photos, was generated with OpenAI image generation. The lighter interface uses white cards, charcoal text, and muted teal accents. Existing built-in sample items receive the new imagery without changing their names, tags, or saved outfit references; uploaded clothing and deleted samples are preserved.
 
 Mouse/pen/touch dragging uses Pointer Events and pointer capture rather than native HTML drag-and-drop. A floating mannequin drop target appears for touch layouts or when the board is off-screen. Release outside the target or press Escape to cancel. Button controls remain available for keyboard access.
+
+## Retailer Referral Tracker (Priority 2 — Zenden)
+
+The standalone tracker is included under `public/referral-tracker/`. It does not replace the existing CraftNDetail application. It records retailer referrals, tracks lead status through completed paid work, and compares retailer referral costs.
+
+- Run the main project with `npm run dev`, then open `http://localhost:5173/referral-tracker/`.
+- The static files in `public/referral-tracker/` are copied into `docs/referral-tracker/` by the Pages build. Once GitHub Pages is enabled for `main` and `/docs`, the tracker is available at `https://jaw6027.github.io/MGMT-3400-Team-5/referral-tracker/`.
+- Referral data stays in that browser’s local storage under its own key; it does not sync with teammates or devices. Use fictional details. The contact field is disabled until the user confirms the customer agreed to be contacted; this remains a classroom reminder, not verified legal consent.
+- Run its data tests from the repository root with `node --test tests/referral-tracker/core.test.cjs`.
+
+The tracker is a classroom customer discovery tool, not evidence that demand has been verified. Revenue figures do not include labor, materials, taxes, or overhead and are not profit.
